@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SafariKeys — Short-stay & Airbnb Management</title>
+  <meta name="description" content="SafariKeys: full-service short-stay and Airbnb management — listings, guest communication, cleaning, pricing & growth." />
+  <meta name="theme-color" content="#ffffff" />
+  <!-- Fallback fonts, easy to customize -->
+  <style>
+    :root{
+      --bg:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --accent:#0ea5a4; /* teal-ish accent */
+      --accent-2:#b7795f; /* warm sand accent */
+      --card:#f8fafc;
+      --radius:12px;
+      --maxw:1100px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:var(--bg);
+      color:var(--text);
+      line-height:1.45;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+    .container{
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding:28px;
+    }
+
+    /* Header */
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:12px 0;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      text-decoration:none;
+      color:inherit;
+    }
+    .logo {
+      width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;
+      box-shadow:0 6px 18px rgba(15,23,42,0.08);
+    }
+    nav{display:flex;gap:14px;align-items:center}
+    nav a{color:var(--muted);text-decoration:none;font-weight:600}
+    .cta{
+      background:var(--accent);
+      color:white;
+      border:none;
+      padding:10px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:700;
+    }
+
+    /* Hero */
+    .hero{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:20px;
+      align-items:center;
+      padding:28px 0 36px;
+    }
+    .hero-grid{display:flex;flex-direction:column;gap:18px}
+    .kicker{color:var(--accent);font-weight:800;letter-spacing:0.6px}
+    h1{margin:0;font-size:clamp(26px,4vw,40px);line-height:1.05}
+    p.lead{color:var(--muted);margin:0;max-width:72ch}
+
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap}
+    .btn-primary{background:var(--accent);color:white;border:none;padding:12px 18px;border-radius:10px;font-weight:700;cursor:pointer}
+    .btn-secondary{background:transparent;border:2px solid var(--accent);padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:700;color:var(--accent)}
+
+    .hero-visual{
+      background:linear-gradient(180deg, rgba(14,165,164,0.06), rgba(183,121,95,0.03));
+      border-radius:16px;
+      padding:18px;
+      display:flex;
+      gap:14px;
+      align-items:center;
+      justify-content:center;
+      min-height:180px;
+    }
+    .card{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 20px rgba(15,23,42,0.04)}
+
+    /* Features */
+    .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px}
+    .feature{padding:14px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid rgba(15,23,42,0.04)}
+    .feature h4{margin:6px 0 0}
+
+    /* Testimonials & footer */
+    .testimonials{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px}
+    footer{margin-top:28px;color:var(--muted);font-size:14px;padding:18px 0;border-top:1px solid rgba(15,23,42,0.04)}
+    .flex{display:flex;gap:12px;align-items:center}
+
+    /* Contact form modal */
+    .modal {
+      position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.5);padding:18px;z-index:60;
+    }
+    .modal.open{display:flex}
+    .modal-panel{background:white;border-radius:14px;padding:18px;max-width:520px;width:100%}
+    label{display:block;font-weight:700;margin-bottom:6px}
+    input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid #e6eef3;font-size:14px}
+    .form-row{margin-bottom:12px}
+    .close-btn{background:transparent;border:0;font-weight:800;font-size:18px;cursor:pointer}
+
+    /* Tiny language toggle */
+    .lang-toggle{border-radius:999px;padding:6px;border:1px solid rgba(15,23,42,0.06);display:flex;align-items:center;gap:6px}
+    .lang-toggle button{border:0;background:transparent;cursor:pointer;padding:6px 10px;border-radius:8px}
+    .lang-toggle .active{background:var(--accent);color:white}
+
+    /* Responsive */
+    @media(min-width:880px){
+      .hero{grid-template-columns:1fr 420px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="page-root">
+    <header>
+      <a class="brand" href="#" aria-label="SafariKeys home">
+        <div class="logo" aria-hidden="true">SK</div>
+        <div>
+          <div style="font-weight:800">SafariKeys</div>
+          <div style="font-size:12px;color:var(--muted)">Short-stay management</div>
+        </div>
+      </a>
+
+      <div style="display:flex;align-items:center;gap:14px">
+        <nav aria-label="Primary">
+          <a href="#services">Services</a>
+          <a href="#how">How it works</a>
+          <a href="#contact">Contact</a>
+        </nav>
+
+        <div class="lang-toggle" role="tablist" aria-label="Language">
+          <button id="enBtn" class="active" aria-pressed="true">EN</button>
+          <button id="swBtn" aria-pressed="false">SW</button>
+        </div>
+
+        <button class="cta" id="bookBtn">Get Started</button>
+      </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="hero-grid">
+        <div class="kicker" id="kicker">Full-service co-hosting</div>
+        <h1 id="hero-heading">We manage your listings, guests & operations — you collect relaxed income.</h1>
+        <p class="lead" id="hero-sub">
+          SafariKeys helps property owners maximize short-stay revenue without the headache — from pricing and listings to cleaning, guest support and monthly reports.
+        </p>
+
+        <div class="hero-actions">
+          <button class="btn-primary" id="openForm">Request a free audit</button>
+          <button class="btn-secondary" id="learnBtn">How it works</button>
+        </div>
+
+        <div style="margin-top:8px;color:var(--muted);font-size:13px;">
+          Phone: <strong id="phone">+254794854294</strong> &nbsp; • &nbsp; Email: <strong id="email">lennykaranja4@gmail.com</strong>
+        </div>
+
+        <div class="features" aria-hidden="false">
+          <div class="feature">
+            <strong>Listing optimisation</strong>
+            <p style="margin:6px 0 0;color:var(--muted)">Better photos, SEO copy, dynamic pricing to increase occupancy.</p>
+          </div>
+          <div class="feature">
+            <strong>Guest communication</strong>
+            <p style="margin:6px 0 0;color:var(--muted)">Fast responses, check-in guides, 24/7 support for seamless reviews.</p>
+          </div>
+          <div class="feature">
+            <strong>Operations</strong>
+            <p style="margin:6px 0 0;color:var(--muted)">Professional cleaning, maintenance coordination, inventory & onboarding.</p>
+          </div>
+          <div class="feature">
+            <strong>Transparent payouts</strong>
+            <p style="margin:6px 0 0;color:var(--muted)">Monthly reports and clear accounting — you always see the numbers.</p>
+          </div>
+        </div>
+      </div>
+
+      <aside class="hero-visual card" aria-hidden="true">
+        <!-- Placeholder visual — replace with property image or a screenshot -->
+        <div style="max-width:360px;width:100%;text-align:center">
+          <img src="https://via.placeholder.com/360x200.png?text=SafariKeys+Preview" alt="SafariKeys preview" style="width:100%;border-radius:10px;display:block;margin-bottom:10px" />
+          <div style="font-weight:800">Managed properties</div>
+          <div style="font-size:13px;color:var(--muted)">Optimised listings · Guest satisfaction · Higher occupancy</div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- How it works -->
+    <section id="how" style="margin-top:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <h2 style="margin:0">How SafariKeys works</h2>
+        <div style="color:var(--muted);font-size:13px">Simple process — onboarding to payout</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:10px">
+        <div class="card">
+          <strong>1. Free audit</strong>
+          <p style="margin:8px 0 0;color:var(--muted)">We review listing, photos, pricing and recommend improvements.</p>
+        </div>
+        <div class="card">
+          <strong>2. Onboarding & setup</strong>
+          <p style="margin:8px 0 0;color:var(--muted)">Professional photos, optimized listing copy and calendar sync.</p>
+        </div>
+        <div class="card">
+          <strong>3. Operations & guests</strong>
+          <p style="margin:8px 0 0;color:var(--muted)">Cleaning, check-in, 24/7 guest messaging and maintenance handling.</p>
+        </div>
+        <div class="card">
+          <strong>4. Monthly reporting</strong>
+          <p style="margin:8px 0 0;color:var(--muted)">Clear statements, payouts and suggestions to grow revenue.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section style="margin-top:18px">
+      <h3 style="margin:0 0 10px">What hosts say</h3>
+      <div class="testimonials">
+        <div class="card">
+          <strong>“Booked solid within 2 weeks.”</strong>
+          <p style="margin:8px 0 0;color:var(--muted)">— Host, Nairobi. "They handled everything from photos to guest messaging."</p>
+        </div>
+        <div class="card">
+          <strong>“Transparent payouts and quick support.”</strong>
+          <p style="margin:8px 0 0;color:var(--muted)">— Host, Kiambu. "Monthly reports make tracking easy."</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact / Booking -->
+    <section id="contact" style="margin-top:20px;display:grid;grid-template-columns:1fr;gap:12px">
+      <div class="card" style="padding:18px">
+        <h3 style="margin-top:0">Request a free property audit</h3>
+        <p style="color:var(--muted);margin-bottom:12px">Share a few details and we'll send a tailored report with growth suggestions.</p>
+
+        <form id="auditForm" class="form" onsubmit="event.preventDefault(); submitForm();">
+          <div class="form-row">
+            <label for="ownerName">Full name</label>
+            <input id="ownerName" name="ownerName" required placeholder="Your name" />
+          </div>
+          <div class="form-row">
+            <label for="propLocation">Property location</label>
+            <input id="propLocation" name="propLocation" required placeholder="City / Area" />
+          </div>
+          <div class="form-row">
+            <label for="nights">Property type</label>
+            <select id="propType" name="propType" required>
+              <option value="">Choose...</option>
+              <option>Apartment</option>
+              <option>House / Villa</option>
+              <option>Studio</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div style="display:flex;gap:8px">
+            <button class="btn-primary" type="submit">Send audit request</button>
+            <button type="button" class="btn-secondary" onclick="openModal()">Message us</button>
+          </div>
+        </form>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:center">
+        <div class="card" style="flex:1">
+          <strong>Direct contact</strong>
+          <p style="margin:8px 0 0;color:var(--muted)">Phone: <a href="tel:+254794854294">+254794854294</a><br>Email: <a href="mailto:lennykaranja4@gmail.com">lennykaranja4@gmail.com</a></p>
+        </div>
+        <div class="card" style="width:220px">
+          <strong>Transparent fees</strong>
+          <p style="margin:8px 0 0;color:var(--muted)">No long contracts — choose monthly or per-booking plans.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+        <div>© <strong>SafariKeys</strong> — short-stay management</div>
+        <div style="color:var(--muted);font-size:13px">Made with care • Nairobi, Kenya</div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-panel" role="document">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h3 style="margin:0">Send us a message</h3>
+        <button class="close-btn" aria-label="Close" onclick="closeModal()">✕</button>
+      </div>
+
+      <form id="msgForm" onsubmit="event.preventDefault(); alert('Message sent — we will reply to ' + (document.getElementById('msgEmail').value || 'your email')); closeModal();">
+        <div class="form-row">
+          <label for="msgName">Name</label>
+          <input id="msgName" required />
+        </div>
+        <div class="form-row">
+          <label for="msgEmail">Email</label>
+          <input id="msgEmail" type="email" placeholder="you@example.com" required />
+        </div>
+        <div class="form-row">
+          <label for="msgText">Message</label>
+          <textarea id="msgText" rows="4" placeholder="Tell us about your property or question"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn-primary" type="submit">Send</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Simple UI interactions and small accessibility helpers
+    const modal = document.getElementById('modal');
+    function openModal(){
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden','false');
+      document.getElementById('msgName').focus();
+    }
+    function closeModal(){
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden','true');
+      document.getElementById('openForm').focus();
+    }
+
+    document.getElementById('bookBtn').addEventListener('click', openModal);
+    document.getElementById('openForm').addEventListener('click', () => {
+      // scroll to contact form
+      document.getElementById('contact').scrollIntoView({behavior:'smooth'});
+      document.getElementById('ownerName').focus();
+    });
+
+    // Tiny form "submit" simulation — replace with fetch to your backend
+    function submitForm(){
+      const name = document.getElementById('ownerName').value || 'Host';
+      const location = document.getElementById('propLocation').value || 'Location';
+      alert('Thanks, ' + name + '! We received your audit request for ' + location + '. We will contact you at ' + document.getElementById('email').textContent);
+      document.getElementById('auditForm').reset();
+    }
+
+    // Language toggle (basic demo)
+    const enBtn = document.getElementById('enBtn');
+    const swBtn = document.getElementById('swBtn');
+
+    function setLang(lang){
+      const isEn = lang === 'en';
+      enBtn.classList.toggle('active', isEn);
+      swBtn.classList.toggle('active', !isEn);
+      enBtn.setAttribute('aria-pressed', isEn);
+      swBtn.setAttribute('aria-pressed', !isEn);
+
+      if(isEn){
+        document.getElementById('kicker').textContent = 'Full-service co-hosting';
+        document.getElementById('hero-heading').textContent = 'We manage your listings, guests & operations — you collect relaxed income.';
+        document.getElementById('hero-sub').textContent = "SafariKeys helps property owners maximize short-stay revenue without the headache — from pricing and listings to cleaning, guest support and monthly reports.";
+        document.getElementById('openForm').textContent = 'Request a free audit';
+        document.getElementById('learnBtn').textContent = 'How it works';
+      } else {
+        // Kiswahili texts (short translations)
+        document.getElementById('kicker').textContent = 'Huduma kamili ya co-host';
+        document.getElementById('hero-heading').textContent = 'Tunashughulikia orodha zako, wageni na uendeshaji — wewe unapokea mapato kwa utulivu.';
+        document.getElementById('hero-sub').textContent = "SafariKeys inasaidia wenye mali kuongeza mapato ya nafasi za muda mfupi bila shida — kutoka bei na orodha hadi usafi, msaada wa wageni na ripoti za kila mwezi.";
+        document.getElementById('openForm').textContent = 'Omba ukaguzi wa bure';
+        document.getElementById('learnBtn').textContent = 'Jinsi inavyofanya kazi';
+      }
+    }
+
+    enBtn.addEventListener('click', () => setLang('en'));
+    swBtn.addEventListener('click', () => setLang('sw'));
+
+    // Accessibility: close modal on Escape
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+    });
+  </script>
+</body>
+</html>
