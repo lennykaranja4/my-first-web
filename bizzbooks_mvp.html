@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BizzBooks — Firebase MVP (Fixed)</title>
+
+<!-- Minimal improved UI (light theme) - ACCENT CHANGED TO RED -->
+<style>
+  :root{
+    --bg:#ffffff; --card:#fbfdff; --muted:#6b7280;
+    --accent:#D7263D; /* red accent */
+    --accent-2:#FF7F11;
+    --pad:14px; --radius:12px; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%; margin:0; background:linear-gradient(180deg,#fff6f6 0%, #ffffff 100%); color:#0f172a;}
+  .app-wrap{max-width:480px; margin:18px auto; min-height:92vh; background:transparent; padding-bottom:70px;}
+  .card{background:var(--card); border-radius:var(--radius); padding:14px; box-shadow:0 8px 22px rgba(6,20,39,0.06); margin-bottom:12px;}
+  header{display:flex; align-items:center; justify-content:space-between; padding:8px 2px;}
+  .brand{display:flex; align-items:center; gap:12px}
+  .logo{width:44px;height:44px;background:linear-gradient(180deg,var(--accent),#9b1b2b); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:18px;}
+  h1{margin:0;font-size:18px;color:var(--accent)}
+  .sub{color:var(--muted); font-size:13px}
+  .container{padding: var(--pad);}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .btn{background:var(--accent); color:#fff; padding:10px 12px; border-radius:10px; border:none; font-weight:700; cursor:pointer;}
+  .btn.outline{background:#fff;color:var(--accent); border:1px solid rgba(215,38,61,0.12)}
+  .small{font-size:12px;color:var(--muted)}
+  input,select{width:100%; padding:10px; border-radius:8px; border:1px solid #e6eef8; margin-top:6px}
+  nav{position:fixed; left:50%; transform:translateX(-50%); bottom:12px; width:calc(100% - 40px); max-width:480px; display:flex; gap:8px;}
+  nav button{flex:1; padding:12px; border-radius:12px; border:0; background:#fff; box-shadow:0 6px 18px rgba(6,20,39,0.06); font-weight:700;}
+  .muted{color:var(--muted)}
+  .list-item{display:flex; justify-content:space-between; align-items:center; padding:10px 6px; border-radius:8px; background:#fff; margin-bottom:8px; box-shadow:0 1px 0 rgba(0,0,0,0.02);}
+  .badge{background:var(--accent-2); color:#fff; padding:6px 8px; border-radius:999px; font-weight:700;}
+  .topbar{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px;}
+  .hint{font-size:12px; color:var(--muted)}
+  .center{display:flex; justify-content:center; align-items:center}
+  /* login modal */
+  .overlay{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(6,12,28,0.35); z-index:9999;}
+  .auth-card{width:92%; max-width:420px; border-radius:14px; padding:16px; background:#fff}
+  .link{color:var(--accent); cursor:pointer; text-decoration:underline}
+  @media(min-width:700px){ .app-wrap{margin-top:28px; } .container{padding:22px} }
+</style>
+
+<!-- Firebase compat SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+</head>
+<body>
+<div class="app-wrap" id="root">
+  <!-- Header -->
+  <header class="card">
+    <div class="brand">
+      <div class="logo">BB</div>
+      <div>
+        <h1>BizzBooks</h1>
+        <div class="sub">Your business. Your books. Simplified.</div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div class="small muted" id="todayDate"></div>
+      <div style="margin-top:6px">
+        <select id="langToggle" title="Language">
+          <option value="en">EN</option>
+          <option value="sw">SW</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main container -->
+  <div class="container" id="container">
+    <!-- Loading / Auth placeholder -->
+    <div id="loading" class="card center"><div class="muted">Connecting to BizzBooks...</div></div>
+
+    <!-- Main App content (hidden until auth ready) -->
+    <div id="app" style="display:none">
+      <!-- Dashboard -->
+      <section id="screen-dashboard">
+        <div class="topbar">
+          <div>
+            <div class="small muted" id="labelSales">Today's Sales</div>
+            <div style="font-size:20px; font-weight:800" id="totalSales">KES 0</div>
+          </div>
+          <div style="text-align:right">
+            <div class="small muted" id="topItemLabel">Top item</div>
+            <div id="topItem" class="muted">—</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; gap:10px; align-items:center; justify-content:space-between;">
+            <div>
+              <div class="small muted" id="lowStockLabel">Low stock</div>
+              <div id="lowStockList" style="margin-top:8px"></div>
+            </div>
+            <div style="text-align:center">
+              <div class="small muted">Business</div>
+              <div id="bizNameTitle" style="font-weight:700">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <button class="btn" onclick="navigate('add-sale')">Add Sale</button>
+          <button class="btn outline" onclick="navigate('add-stock')">Add Stock</button>
+          <button class="btn outline" onclick="navigate('inventory')">Inventory</button>
+          <button class="btn outline" onclick="navigate('reports')">Reports</button>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="card">
+          <div class="small muted" id="recentLabel">Recent Transactions</div>
+          <div id="recentList" style="margin-top:10px;"></div>
+        </div>
+      </section>
+
+      <!-- Add Sale -->
+      <section id="screen-add-sale" style="display:none">
+        <div class="card">
+          <div class="small muted">Record a sale</div>
+          <div style="margin-top:8px">
+            <label class="small">Product</label>
+            <select id="saleProduct"></select>
+          </div>
+          <div style="margin-top:8px">
+            <label class="small">Quantity</label>
+            <input id="saleQty" type="number" value="1" min="1"/>
+          </div>
+          <div style="margin-top:8px">
+            <label class="small">Payment</label>
+            <select id="salePayment">
+              <option value="mpesa">M-Pesa</option>
+              <option value="cash">Cash</option>
+              <option value="credit">Credit</option>
+            </select>
+          </div>
+          <div style="margin-top:8px">
+            <label class="small">Customer (optional)</label>
+            <input id="saleCustomer" placeholder="Customer name / Jina la mteja"/>
+          </div>
+          <div style="margin-top:12px; display:flex; gap:8px;">
+            <button class="btn" onclick="saveSale()">Save Sale</button>
+            <button class="btn outline" onclick="navigate('dashboard')">Cancel</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Add Stock -->
+      <section id="screen-add-stock" style="display:none">
+        <div class="card">
+          <div class="small muted">Add or restock product</div>
+          <div style="margin-top:8px">
+            <label class="small">Product Name</label>
+            <input id="stockName" placeholder="e.g., Unga (2kg)"/>
+          </div>
+          <div style="margin-top:8px">
+            <label class="small">Quantity</label>
+            <input id="stockQty" type="number" value="10" min="1"/>
+          </div>
+          <div style="margin-top:8px">
+            <label class="small">Buying Price (per unit)</label>
+            <input id="buyPrice" type="number" placeholder="KES"/>
+          </div>
+          <div style="margin-top:8px">
+            <label class="small">Selling Price (per unit)</label>
+            <input id="sellPrice" type="number" placeholder="KES"/>
+          </div>
+          <div style="margin-top:12px; display:flex; gap:8px;">
+            <button class="btn" onclick="saveStock()">Save Stock</button>
+            <button class="btn outline" onclick="navigate('dashboard')">Cancel</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Inventory -->
+      <section id="screen-inventory" style="display:none">
+        <div class="card">
+          <div class="small muted">Inventory</div>
+          <div id="inventoryList" style="margin-top:10px"></div>
+        </div>
+      </section>
+
+      <!-- Reports -->
+      <section id="screen-reports" style="display:none">
+        <div class="card">
+          <div class="small muted">Reports</div>
+          <div style="margin-top:8px">
+            <label class="small">Period</label>
+            <select id="reportPeriod">
+              <option value="today">Today</option>
+              <option value="week">This week</option>
+              <option value="all">All time</option>
+            </select>
+          </div>
+          <div id="reportSummary" style="margin-top:12px"></div>
+          <div style="margin-top:12px; display:flex; gap:8px;">
+            <button class="btn" onclick="generateExport('csv')">Export CSV</button>
+            <button class="btn outline" onclick="generateExport('json')">Export JSON</button>
+          </div>
+          <div style="margin-top:10px">
+            <button class="btn" onclick="shareSummary()">Copy Summary</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section id="screen-settings" style="display:none">
+        <div class="card">
+          <div class="small muted">Settings</div>
+          <div style="margin-top:8px">
+            <label class="small">Business Name</label>
+            <input id="bizName"/>
+          </div>
+          <div style="margin-top:8px">
+            <label class="small">M-Pesa Number (for reference)</label>
+            <input id="mpesaNo" placeholder="07xxxxxxxx"/>
+          </div>
+          <div style="margin-top:10px; display:flex; gap:8px;">
+            <button class="btn" onclick="saveSettings()">Save</button>
+            <button class="btn outline" onclick="signOut()">Log out</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- bottom nav -->
+  <nav>
+    <button onclick="navigate('dashboard')">Home</button>
+    <button onclick="navigate('add-sale')">Sale</button>
+    <button onclick="navigate('add-stock')">Stock</button>
+    <button onclick="navigate('inventory')">Inv</button>
+    <button onclick="navigate('reports')">Rpt</button>
+  </nav>
+</div>
+
+<!-- AUTH MODAL (shown when not logged in) -->
+<div id="authModal" class="overlay" style="display:none">
+  <div class="auth-card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-weight:800; font-size:18px">BizzBooks</div>
+        <div class="small muted">Sign in to manage your shop</div>
+      </div>
+      <div><button class="btn" id="toggleSignupBtn">Sign up</button></div>
+    </div>
+
+    <div id="authForm" style="margin-top:12px">
+      <div style="margin-top:8px">
+        <label class="small">Email</label>
+        <input id="authEmail" type="email"/>
+      </div>
+      <div style="margin-top:8px">
+        <label class="small">Password</label>
+        <input id="authPass" type="password"/>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:8px;">
+        <button class="btn" id="authPrimaryBtn">Sign in</button>
+        <button class="btn outline" id="authSecondaryBtn">Create account</button>
+      </div>
+      <div style="margin-top:10px" class="small muted">
+        Or use <span class="link" id="anonDemo">Quick demo (no email)</span>
+      </div>
+      <div id="authMsg" style="margin-top:8px" class="small muted"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase + App Logic (compat) -->
+<script>
+/* ========== FIREBASE CONFIG ========== */
+/* Replace with your firebaseConfig if you change projects */
+const firebaseConfig = {
+  apiKey: "AIzaSyBDOJ8RMvu60V4NKVo6rAvMS3RI6Wq25Tg",
+  authDomain: "bizzbooks-mvp.firebaseapp.com",
+  projectId: "bizzbooks-mvp",
+  storageBucket: "bizzbooks-mvp.firebasestorage.app",
+  messagingSenderId: "638588930835",
+  appId: "1:638588930835:web:6314eaf2c214e929d528e6"
+};
+
+/* ========== INIT FIREBASE (compat) ========== */
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// enable persistence (offline) if possible
+if (db && db.enablePersistence) {
+  db.enablePersistence().catch(err => {
+    console.warn('Persistence not enabled:', err && err.code);
+  });
+}
+
+/* ========== APP STATE ========== */
+let currentUser = null;
+let productsUnsub = null;
+let salesUnsub = null;
+let settingsUnsub = null;
+const state = { lang: 'en' };
+
+/* ========== HELPERS ========== */
+function $id(id){ return document.getElementById(id); }
+function formatKES(n){ return 'KES ' + (n || 0); }
+function genId(){ return 'id_' + Math.random().toString(36).slice(2,9); }
+function show(el){ if(el) el.style.display = 'block'; }
+function hide(el){ if(el) el.style.display = 'none'; }
+
+/* ========== AUTH UI WIRING ========== */
+$id('toggleSignupBtn').addEventListener('click', () => {
+  // toggle primary button to create account
+  $id('authPrimaryBtn').innerText = 'Create account';
+  $id('authPrimaryBtn').onclick = signUp;
+  $id('authSecondaryBtn').innerText = 'Sign in';
+  $id('authSecondaryBtn').onclick = signIn;
+  $id('authMsg').innerText = 'Enter details and press Create account';
+});
+
+$id('authPrimaryBtn').addEventListener('click', signIn);
+$id('authSecondaryBtn').addEventListener('click', signUp);
+$id('anonDemo').addEventListener('click', signInAnonymously);
+
+/* ========== AUTH FLOWS ========== */
+async function signIn(){
+  const email = $id('authEmail').value.trim();
+  const pass = $id('authPass').value;
+  if(!email || !pass){ $id('authMsg').innerText = 'Enter email and password'; return; }
+  try{
+    await auth.signInWithEmailAndPassword(email, pass);
+    $id('authMsg').innerText = '';
+  } catch(err){ $id('authMsg').innerText = err.message || 'Sign-in failed'; console.error(err); }
+}
+
+async function signUp(){
+  const email = $id('authEmail').value.trim();
+  const pass = $id('authPass').value;
+  if(!email || !pass){ $id('authMsg').innerText = 'Enter email and password'; return; }
+  try{
+    await auth.createUserWithEmailAndPassword(email, pass);
+    $id('authMsg').innerText = 'Account created — signed in';
+  } catch(err){ $id('authMsg').innerText = err.message || 'Sign-up failed'; console.error(err); }
+}
+
+async function signInAnonymously(){
+  try{
+    await auth.signInAnonymously();
+  } catch(err){ console.error(err); alert('Demo sign-in failed: ' + (err.message||err)); }
+}
+
+async function signOut(){
+  try{ await auth.signOut(); } catch(e){ console.error(e); }
+}
+
+/* ========== AUTH STATE HANDLER ========== */
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  $id('todayDate').innerText = new Date().toLocaleDateString();
+  if(user){
+    hide($id('authModal'));
+    hide($id('loading'));
+    show($id('app'));
+    startUserListeners(user.uid);
+  } else {
+    show($id('authModal'));
+    show($id('loading'));
+    hide($id('app'));
+    stopUserListeners();
+  }
+});
+
+/* ========== FIRESTORE LISTENERS ========== */
+function startUserListeners(uid){
+  // products collection
+  const pCol = db.collection('users').doc(uid).collection('products');
+  productsUnsub = pCol.onSnapshot(snapshot => {
+    const products = [];
+    snapshot.forEach(doc => products.push({ id: doc.id, ...doc.data() }));
+    window._products = products;
+    renderProductsSelect();
+    renderInventory();
+    renderDashboard();
+  }, err => console.error('products onSnapshot', err));
+
+  // sales collection (most recent first)
+  const sCol = db.collection('users').doc(uid).collection('sales').orderBy('time', 'desc');
+  salesUnsub = sCol.onSnapshot(snapshot => {
+    const sales = [];
+    snapshot.forEach(doc => sales.push({ id: doc.id, ...doc.data() }));
+    window._sales = sales;
+    renderRecent();
+    renderDashboard();
+    renderReportSummary();
+  }, err => console.error('sales onSnapshot', err));
+
+  // settings doc
+  const settingsDoc = db.collection('users').doc(uid).collection('meta').doc('settings');
+  settingsUnsub = settingsDoc.onSnapshot(doc => {
+    const s = doc.exists ? doc.data() : { bizName: 'BizzBooks Duka', mpesa: '' };
+    window._settings = s;
+    $id('bizNameTitle').innerText = s.bizName || '—';
+    $id('bizName').value = s.bizName || '';
+    $id('mpesaNo').value = s.mpesa || '';
+  }, err => console.error('settings onSnapshot', err));
+
+  // seed sample products if empty
+  pCol.limit(1).get().then(q => {
+    if(q.empty){
+      const seed = [
+        { name:'Unga (2kg)', qty:30, buy:120, sell:150 },
+        { name:'Sugar (1kg)', qty:20, buy:100, sell:130 },
+        { name:'Blue Band (250g)', qty:10, buy:80, sell:100 }
+      ];
+      seed.forEach(it => pCol.add(it).catch(e=>console.warn('seed add failed',e)));
+    }
+  }).catch(e=>console.warn('seed check failed',e));
+}
+
+function stopUserListeners(){
+  productsUnsub && productsUnsub();
+  salesUnsub && salesUnsub();
+  settingsUnsub && settingsUnsub();
+  window._products = [];
+  window._sales = [];
+  window._settings = {};
+}
+
+/* ========== RENDERING ========== */
+function renderProductsSelect(){
+  const sel = $id('saleProduct'); if(!sel) return;
+  const products = window._products || [];
+  sel.innerHTML = '';
+  products.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id; opt.innerText = `${p.name} — ${p.qty} left (Ksh ${p.sell || '-'})`;
+    sel.appendChild(opt);
+  });
+}
+
+function renderDashboard(){
+  const sales = window._sales || [];
+  const today = new Date().toDateString();
+  const todaySales = sales.filter(s => new Date(s.time).toDateString() === today);
+  const total = todaySales.reduce((a,b)=>a + (b.total||0), 0);
+  $id('totalSales').innerText = formatKES(total);
+  // top item
+  const freq = {};
+  todaySales.forEach(s=> freq[s.productName] = (freq[s.productName]||0) + s.qty);
+  $id('topItem').innerText = Object.keys(freq).sort((a,b)=>freq[b]-freq[a])[0] || '—';
+  // low stock
+  const low = (window._products || []).filter(p => p.qty <= 5);
+  const lowEl = $id('lowStockList'); lowEl.innerHTML = '';
+  if(low.length===0) lowEl.innerText = 'All good';
+  else low.forEach(p => { const span = document.createElement('div'); span.className='badge'; span.style.display='inline-block'; span.style.margin='4px'; span.innerText = `${p.name} (${p.qty})`; lowEl.appendChild(span); });
+}
+
+function renderRecent(){
+  const sales = (window._sales || []).slice(0,8);
+  const container = $id('recentList'); container.innerHTML = '';
+  if(sales.length===0) { container.innerHTML = '<div class="muted">No sales yet</div>'; return; }
+  sales.forEach(s => {
+    const d = new Date(s.time);
+    const html = `<div class="list-item"><div><strong>${s.productName}</strong><div class="small muted">${s.qty} × KES ${s.unitPrice}</div></div>
+      <div style="text-align:right"><div style="font-weight:700">KES ${s.total}</div><div class="small muted">${d.toLocaleString()}</div></div></div>`;
+    container.insertAdjacentHTML('beforeend', html);
+  });
+}
+
+function renderInventory(){
+  const list = $id('inventoryList'); list.innerHTML = '';
+  const prods = window._products || [];
+  if(prods.length===0){ list.innerHTML = '<div class="muted">No products</div>'; return; }
+  prods.forEach(p => {
+    const html = `<div class="list-item"><div><strong>${p.name}</strong><div class="small muted">Qty: ${p.qty} — Buy: ${p.buy||'-'} — Sell: ${p.sell||'-'}</div></div>
+      <div><button class="btn outline" onclick="quickSell('${p.id}')">Sell</button></div></div>`;
+    list.insertAdjacentHTML('beforeend', html);
+  });
+}
+
+/* ========== NAVIGATION & QUICK ACTIONS ========== */
+function navigate(screen){
+  const ids = ['screen-dashboard','screen-add-sale','screen-add-stock','screen-inventory','screen-reports','screen-settings'];
+  ids.forEach(id => {
+    const el = $id(id);
+    if(el) el.style.display = 'none';
+  });
+  const map = {
+    dashboard: 'screen-dashboard',
+    'add-sale': 'screen-add-sale',
+    'add-stock': 'screen-add-stock',
+    inventory: 'screen-inventory',
+    reports: 'screen-reports',
+    settings: 'screen-settings'
+  };
+  const target = map[screen] || 'screen-dashboard';
+  const elT = $id(target);
+  if(elT) elT.style.display = 'block';
+  renderReportSummary();
+}
+
+function quickSell(id){
+  navigate('add-sale');
+  setTimeout(()=>{ $id('saleProduct').value = id; $id('saleQty').value = 1; }, 220);
+}
+
+/* ========== CRUD ========== */
+async function saveStock(){
+  const name = $id('stockName').value.trim();
+  const qty = parseInt($id('stockQty').value) || 0;
+  const buy = parseFloat($id('buyPrice').value) || 0;
+  const sell = parseFloat($id('sellPrice').value) || 0;
+  if(!name || qty<=0){ alert('Enter product name and quantity'); return; }
+  const uid = currentUser.uid;
+  const pCol = db.collection('users').doc(uid).collection('products');
+  try{
+    const q = await pCol.where('name', '==', name).limit(1).get();
+    if(!q.empty){
+      const doc = q.docs[0];
+      await doc.ref.update({ qty: firebase.firestore.FieldValue.increment(qty), buy: buy || doc.data().buy, sell: sell || doc.data().sell });
+    } else {
+      await pCol.add({ name, qty, buy, sell });
+    }
+  }catch(e){ console.error('saveStock error', e); alert('Failed to save stock'); }
+  $id('stockName').value=''; $id('stockQty').value = 10; $id('buyPrice').value=''; $id('sellPrice').value='';
+  navigate('inventory');
+}
+
+async function saveSale(){
+  const pid = $id('saleProduct').value;
+  const qty = parseInt($id('saleQty').value) || 0;
+  const payment = $id('salePayment').value;
+  const customer = $id('saleCustomer').value.trim();
+  if(!pid || qty<=0){ alert('Select product and quantity'); return; }
+  const uid = currentUser.uid;
+  const pDocRef = db.collection('users').doc(uid).collection('products').doc(pid);
+  try{
+    const pSnap = await pDocRef.get();
+    if(!pSnap.exists){ alert('Product not found'); return; }
+    const p = pSnap.data();
+    if(p.qty < qty){
+      if(!confirm('Insufficient stock. Proceed anyway?')) return;
+    }
+    await pDocRef.update({ qty: firebase.firestore.FieldValue.increment(-qty) });
+    const unit = p.sell || 0;
+    const total = unit * qty;
+    await db.collection('users').doc(uid).collection('sales').add({
+      productId: pid, productName: p.name, qty, unitPrice: unit, total, payment, customer, time: new Date().toISOString()
+    });
+  }catch(e){ console.error('saveSale error', e); alert('Failed to record sale'); }
+  $id('saleCustomer').value=''; $id('saleQty').value=1;
+  navigate('dashboard');
+}
+
+/* ========== REPORTS & EXPORT ========== */
+function generateReport(period='today'){
+  const sales = window._sales || [];
+  const now = new Date();
+  let filtered = sales;
+  if(period==='today') filtered = sales.filter(s => new Date(s.time).toDateString() === now.toDateString());
+  else if(period==='week'){ const start = new Date(); start.setDate(now.getDate()-7); filtered = sales.filter(s => new Date(s.time) >= start); }
+  const total = filtered.reduce((a,b)=>a + (b.total||0), 0);
+  const items = {}; filtered.forEach(s => items[s.productName] = (items[s.productName]||0) + s.qty);
+  return { period, total, count: filtered.length, items, rows: filtered };
+}
+
+function renderReportSummary(){
+  const el = $id('reportSummary'); if(!el) return;
+  const period = $id('reportPeriod') ? $id('reportPeriod').value : 'today';
+  const data = generateReport(period);
+  el.innerHTML = `<div class="small muted">Period: ${data.period}</div>
+    <div style="font-weight:800; margin-top:6px">${formatKES(data.total)} — ${data.count} sales</div>
+    <div class="small muted" style="margin-top:6px">Top items: ${Object.keys(data.items).slice(0,3).join(', ') || '-'}</div>`;
+}
+
+function generateExport(type='csv'){
+  const period = $id('reportPeriod').value || 'today';
+  const data = generateReport(period);
+  if(type === 'json'){
+    const blob = new Blob([JSON.stringify(data.rows, null, 2)], { type: 'application/json' });
+    triggerDownload(blob, `bizzbooks_${period}.json`);
+  } else {
+    const rows = data.rows;
+    if(rows.length === 0){ alert('No data to export'); return; }
+    const headers = ['time','productName','qty','unitPrice','total','payment','customer'];
+    const csv = [headers.join(',')].concat(rows.map(r => headers.map(h => JSON.stringify(r[h]||'')).join(','))).join('\n');
+    triggerDownload(new Blob([csv], { type:'text/csv' }), `bizzbooks_${period}.csv`);
+  }
+}
+
+function triggerDownload(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 800);
+}
+
+function shareSummary(){
+  const period = $id('reportPeriod').value || 'today';
+  const data = generateReport(period);
+  const text = `BizzBooks ${data.period} summary:\nTotal ${data.total}\nSales: ${data.count}\nTop: ${Object.keys(data.items).slice(0,5).map(k=>`${k}(${data.items[k]})`).join(', ')}`;
+  if(navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(()=> alert('Summary copied. Paste into WhatsApp.'));
+  } else { alert(text); }
+}
+
+/* ========== SETTINGS ========== */
+async function saveSettings(){
+  const uid = currentUser.uid;
+  const s = { bizName: $id('bizName').value || 'BizzBooks Duka', mpesa: $id('mpesaNo').value || '' };
+  try{
+    await db.collection('users').doc(uid).collection('meta').doc('settings').set(s);
+    alert('Settings saved');
+  }catch(e){ console.error('saveSettings', e); alert('Failed to save settings'); }
+}
+
+/* ========== INIT ========== */
+(function init(){
+  hide($id('app'));
+  show($id('loading'));
+  navigate('dashboard');
+  $id('reportPeriod') && $id('reportPeriod').addEventListener('change', renderReportSummary);
+})();
+</script>
+</body>
+</html>
