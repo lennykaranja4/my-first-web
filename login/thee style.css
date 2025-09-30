@@ -1,5 +1,5 @@
 body{
-    background-color: #fbf7f7;
+    background-color:  rgba(197, 202, 202, 0.493);
     color: #0d1810;
     margin: 0;
     font-family: Arial, sans-serif;
@@ -13,8 +13,8 @@ header{
 }
 
 #logo{
-    height: 40px;
-    width: 40px;
+    height: 62px;
+    width: 62px;
 }
 
 .header_ul{
@@ -28,13 +28,33 @@ header{
 .header_item{
     text-decoration: none;
     font-weight: bold;
-    color: #223b26;
+    color: #121613f3;
 }
 
-.header_btn{
+.search_bar{
+    display: flex;
+    width: 300px;
+}
+
+.search_bar input{
+    flex:1;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px 0 0 4px;
+} 
+    
+.search_bar button{
+    padding: 8px;
+    border: 1px solid #11772c;
     background-color: #11772c;
     color: white;
-    padding: 10px 20px;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+}
+    .header_btn{
+    background-color: #11772c;
+    color: white;
+    padding: 10px 10px;
     border: none;
     border-radius: 5px;
     font-weight: bold;
@@ -67,9 +87,12 @@ header{
 }
 
 .hero_image{
-    height: 15em;
-    width: 15em;
-    border-radius: 10px;
+    height: 11em;
+    width: 11em;
+    border-radius: 75px;
+    background-color: rgb(29, 119, 67);
+    padding: 1px;
+    display: inline-block;
 }
 
 .hero_p{
@@ -93,4 +116,39 @@ header{
     border: none;
     font-weight: bold;
     cursor: pointer;
+}
+
+.clients{
+    display: flex;
+    gap: 0.5em;
+    padding: 0;
+    margin: 0;
+    justify-content: space-evenly;
+}
+
+.dropped{
+    color: #11772c;
+    font-weight: bold;
+}
+
+.inside_dropped{
+    color: black;
+    font-weight: bold;
+}
+
+.Skills{
+    background-color: #11772c;
+    color: white;
+    border-radius: 10%;
+    padding: 10px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.divider{
+    width: 1.3px;
+    height: 51px;
+    background-color: rgb(108, 201, 108);
+    text-align: center;
 }
