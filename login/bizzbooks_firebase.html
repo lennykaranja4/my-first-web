@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BizzBooks — UX Upgrade</title>
+
+<!-- ==== Styles: improved layout + animations (plain CSS) ==== -->
+<style>
+  :root{
+    --bg: #fff;
+    --panel: #fff7f7;
+    --muted: #6b7280;
+    --accent: #D7263D; /* red accent */
+    --accent-dark: #9b1b2b;
+    --accent-soft: rgba(215,38,61,0.08);
+    --card: #fff;
+    --radius: 12px;
+    --pad: 16px;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  html,body{height:100%; margin:0; background:linear-gradient(180deg,#fff7f7 0%, #ffffff 100%); color:#0f172a;}
+  .app {
+    max-width: 1100px;
+    margin: 20px auto;
+    min-height: 86vh;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 18px;
+    padding: 10px;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: linear-gradient(180deg,var(--panel), #fff);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: 0 10px 30px rgba(10,12,14,0.04);
+    display:flex; flex-direction:column; gap:12px; min-height:520px;
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .logo{
+    width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--accent),var(--accent-dark));
+    color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px;
+  }
+  .brand h2{margin:0; font-size:18px; color:var(--accent);}
+  .brand p{margin:0; font-size:12px; color:var(--muted);}
+
+  .nav {
+    margin-top:10px; display:flex; flex-direction:column; gap:8px;
+  }
+  .nav button {
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; border:0; background:transparent;
+    cursor:pointer; font-weight:700; color:#222; text-align:left; transition: all .18s ease;
+  }
+  .nav button:hover { transform: translateX(6px); color:var(--accent); }
+  .nav button.active { background: linear-gradient(90deg,var(--accent-soft),transparent); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.02); color:var(--accent); }
+
+  .small-muted { font-size:12px; color:var(--muted); margin-top:6px; }
+
+  /* MAIN PANEL */
+  .panel {
+    background: white; border-radius:var(--radius); box-shadow:0 10px 30px rgba(10,12,14,0.05);
+    padding:18px; min-height:520px; overflow:hidden; display:flex; flex-direction:column;
+  }
+
+  .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;}
+  .topbar .left h3{margin:0; color:var(--accent); font-size:18px;}
+  .topbar .left p { margin:0; color:var(--muted); font-size:13px; }
+  .top-actions { display:flex; gap:8px; align-items:center; }
+
+  /* Buttons */
+  .btn {
+    background:var(--accent); color:#fff; border:0; padding:10px 12px; border-radius:10px; font-weight:800;
+    cursor:pointer; box-shadow: 0 8px 20px rgba(215,38,61,0.08); transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .btn:hover { transform: translateY(-3px); box-shadow:0 14px 28px rgba(215,38,61,0.12); }
+  .btn.ghost { background: #fff; color:var(--accent); border:1px solid rgba(215,38,61,0.12); box-shadow:none; }
+  .icon-btn { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:10px; }
+
+  /* Cards & lists */
+  .card { background: #fff; border-radius: 12px; padding:12px; box-shadow:0 6px 20px rgba(20,30,40,0.03); }
+  .stats { display:flex; gap:12px; }
+  .stat { flex:1; padding:12px; border-radius:10px; background:linear-gradient(180deg,#fff,#fff); }
+  .stat h4 { margin:0; font-size:13px; color:var(--muted); }
+  .stat p { margin:6px 0 0 0; font-weight:800; font-size:20px; color:#111; }
+
+  .list-item{
+    display:flex; justify-content:space-between; padding:10px; border-radius:10px; background:#fff; margin-bottom:8px; align-items:center;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .list-item:hover { transform: translateY(-4px); box-shadow:0 12px 30px rgba(6,20,39,0.06); }
+
+  /* Form */
+  label { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+  input, select, textarea { width:100%; padding:10px; border-radius:8px; border:1px solid #eef3f7; outline:none; transition: box-shadow .12s ease; }
+  input:focus, select:focus, textarea:focus { box-shadow: 0 6px 20px rgba(0,0,0,0.04); border-color:var(--accent); }
+
+  /* Toast */
+  .toast { position:fixed; right:20px; top:20px; background: #111; color:#fff; padding:10px 14px; border-radius:10px; opacity:0; transform: translateY(-10px); pointer-events:none; transition: all .28s ease; z-index:9999; }
+  .toast.show { opacity:1; transform: translateY(0); pointer-events:auto; }
+
+  /* Auth modal */
+  .overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background: rgba(6,12,28,0.45); z-index:999; opacity:0; pointer-events:none; transition:all .22s ease; }
+  .overlay.show { opacity:1; pointer-events:auto; }
+  .auth-card { width:92%; max-width:420px; background:#fff; border-radius:14px; padding:18px; transform:scale(.96); opacity:0; transition:all .22s ease; box-shadow:0 20px 60px rgba(10,12,14,0.25); }
+  .overlay.show .auth-card { transform:scale(1); opacity:1; }
+  .auth-actions { display:flex; gap:8px; margin-top:12px; }
+
+  /* responsive */
+  @media(max-width:900px){ .app { grid-template-columns: 1fr; padding:10px; } .sidebar{ order:2 } .panel{ order:1 } nav.fixed{display:none;} }
+</style>
+</head>
+<body>
+
+<!-- APP LAYOUT -->
+<div class="app" id="appRoot">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">BB</div>
+      <div>
+        <h2>BizzBooks</h2>
+        <p class="small-muted">Your business. Your books. Simplified.</p>
+      </div>
+    </div>
+
+    <nav class="nav" id="mainNav">
+      <button data-screen="dashboard" class="active">🏠 Dashboard</button>
+      <button data-screen="add-sale">💸 Add Sale</button>
+      <button data-screen="add-stock">📥 Add Stock</button>
+      <button data-screen="inventory">📦 Inventory</button>
+      <button data-screen="reports">📊 Reports</button>
+      <button data-screen="settings">⚙️ Settings</button>
+    </nav>
+
+    <div style="margin-top:auto;">
+      <div class="small-muted">Logged in as</div>
+      <div id="userEmail" style="font-weight:700; margin-top:6px;">—</div>
+      <div style="margin-top:12px; display:flex; gap:8px;">
+        <button class="btn ghost" onclick="signOut()">Log out</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN PANEL -->
+  <main class="panel">
+    <div class="topbar">
+      <div class="left">
+        <h3 id="panelTitle">Dashboard</h3>
+        <p id="panelSubtitle" class="small-muted">Quick view of your sales & stock</p>
+      </div>
+      <div class="top-actions">
+        <div class="small-muted" id="todayDate"></div>
+        <button class="btn" onclick="navigate('add-sale')">Quick Sale</button>
+      </div>
+    </div>
+
+    <!-- screens container -->
+    <div id="screens" style="position:relative; flex:1; overflow:auto; padding-right:4px;">
+      <!-- Dashboard -->
+      <section id="screen-dashboard" style="animation:fadeIn .28s ease;">
+        <div class="stats" style="margin-bottom:12px;">
+          <div class="stat card">
+            <h4>Today's Sales</h4>
+            <p id="totalSales">KES 0</p>
+          </div>
+          <div class="stat card">
+            <h4>Top item</h4>
+            <p id="topItem">—</p>
+          </div>
+          <div class="stat card">
+            <h4>Low stock</h4>
+            <p id="lowStockList">—</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div class="small-muted">Recent Transactions</div>
+            </div>
+            <div>
+              <button class="btn ghost" onclick="navigate('reports')">View Reports</button>
+            </div>
+          </div>
+          <div id="recentList" style="margin-top:12px;"></div>
+        </div>
+      </section>
+
+      <!-- Add Sale -->
+      <section id="screen-add-sale" style="display:none; opacity:0; transform:translateY(8px);">
+        <div class="card">
+          <div class="small-muted">Record a sale</div>
+          <div style="margin-top:10px;">
+            <label>Product</label>
+            <select id="saleProduct"></select>
+          </div>
+          <div style="margin-top:10px; display:flex; gap:8px;">
+            <div style="flex:1;">
+              <label>Quantity</label>
+              <input id="saleQty" type="number" value="1" min="1"/>
+            </div>
+            <div style="width:160px">
+              <label>Payment</label>
+              <select id="salePayment">
+                <option value="mpesa">M-Pesa</option>
+                <option value="cash">Cash</option>
+                <option value="credit">Credit</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <label>Customer (optional)</label>
+            <input id="saleCustomer" placeholder="Customer name / Jina la mteja"/>
+          </div>
+          <div style="margin-top:12px; display:flex; gap:8px;">
+            <button class="btn" onclick="saveSale()">Save Sale</button>
+            <button class="btn ghost" onclick="navigate('dashboard')">Cancel</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Add Stock -->
+      <section id="screen-add-stock" style="display:none; opacity:0; transform:translateY(8px);">
+        <div class="card">
+          <div class="small-muted">Add or restock product</div>
+          <div style="margin-top:10px;">
+            <label>Product name</label>
+            <input id="stockName" placeholder="e.g., Unga (2kg)"/>
+          </div>
+          <div style="margin-top:10px; display:flex; gap:8px;">
+            <div style="flex:1;">
+              <label>Quantity</label>
+              <input id="stockQty" type="number" value="10" min="1"/>
+            </div>
+            <div style="flex:1;">
+              <label>Buying price</label>
+              <input id="buyPrice" type="number" placeholder="KES"/>
+            </div>
+            <div style="flex:1;">
+              <label>Selling price</label>
+              <input id="sellPrice" type="number" placeholder="KES"/>
+            </div>
+          </div>
+          <div style="margin-top:12px; display:flex; gap:8px;">
+            <button class="btn" onclick="saveStock()">Save Stock</button>
+            <button class="btn ghost" onclick="navigate('inventory')">Cancel</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Inventory -->
+      <section id="screen-inventory" style="display:none; opacity:0; transform:translateY(8px);">
+        <div class="card">
+          <div class="small-muted">Inventory</div>
+          <div id="inventoryList" style="margin-top:12px;"></div>
+        </div>
+      </section>
+
+      <!-- Reports -->
+      <section id="screen-reports" style="display:none; opacity:0; transform:translateY(8px);">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div class="small-muted">Reports</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <label class="small-muted">Period</label>
+              <select id="reportPeriod">
+                <option value="today">Today</option>
+                <option value="week">This week</option>
+                <option value="all">All time</option>
+              </select>
+            </div>
+          </div>
+          <div id="reportSummary" style="margin-top:12px;"></div>
+          <div style="margin-top:12px; display:flex; gap:8px;">
+            <button class="btn" onclick="generateExport('csv')">Export CSV</button>
+            <button class="btn ghost" onclick="generateExport('json')">Export JSON</button>
+            <button class="btn ghost" onclick="shareSummary()">Copy Summary</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section id="screen-settings" style="display:none; opacity:0; transform:translateY(8px);">
+        <div class="card">
+          <div class="small-muted">Settings</div>
+          <div style="margin-top:10px;">
+            <label>Business name</label>
+            <input id="bizName"/>
+          </div>
+          <div style="margin-top:10px;">
+            <label>M-Pesa number (reference)</label>
+            <input id="mpesaNo" placeholder="07xxxxxxxx"/>
+          </div>
+          <div style="margin-top:12px; display:flex; gap:8px;">
+            <button class="btn" onclick="saveSettings()">Save</button>
+            <button class="btn ghost" onclick="signOut()">Log out</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- AUTH MODAL -->
+<div id="authOverlay" class="overlay">
+  <div class="auth-card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-weight:800; font-size:18px">BizzBooks</div>
+        <div class="small-muted">Sign in to manage your shop</div>
+      </div>
+      <div><button class="btn" id="toggleSignupBtn">Sign up</button></div>
+    </div>
+
+    <div id="authForm" style="margin-top:12px">
+      <div style="margin-top:8px;">
+        <label>Email</label>
+        <input id="authEmail" type="email" />
+      </div>
+      <div style="margin-top:8px;">
+        <label>Password</label>
+        <input id="authPass" type="password" />
+      </div>
+      <div class="auth-actions">
+        <button class="btn" id="authPrimaryBtn">Sign in</button>
+        <button class="btn ghost" id="authSecondaryBtn">Create account</button>
+      </div>
+      <div style="margin-top:10px" class="small-muted">
+        Or <span class="link" id="anonDemo">Quick demo (no email)</span>
+      </div>
+      <div id="authMsg" style="margin-top:8px;" class="small-muted"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast">Saved</div>
+
+<!-- Firebase compat SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+<!-- App logic (compat style, keeps your previous Firestore structure) -->
+<script>
+/* ---------- CONFIG (use your project details) ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyBDOJ8RMvu60V4NKVo6rAvMS3RI6Wq25Tg",
+  authDomain: "bizzbooks-mvp.firebaseapp.com",
+  projectId: "bizzbooks-mvp",
+  storageBucket: "bizzbooks-mvp.firebasestorage.app",
+  messagingSenderId: "638588930835",
+  appId: "1:638588930835:web:6314eaf2c214e929d528e6"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+if (db && db.enablePersistence) db.enablePersistence().catch(e=>console.warn('persistence',e));
+
+/* ---------- UTIL ---------- */
+const $ = id => document.getElementById(id);
+const toast = msg => {
+  const t = $('toast'); t.innerText = msg; t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 2200);
+};
+const formatKES = n => 'KES ' + (n || 0);
+
+/* ---------- NAV & UI ---------- */
+const navButtons = document.querySelectorAll('.nav button');
+navButtons.forEach(btn => btn.addEventListener('click', ()=> {
+  navButtons.forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  navigate(btn.dataset.screen);
+}));
+
+function showAuthOverlay(show=true){
+  const ov = $('authOverlay');
+  if(show){ ov.classList.add('show'); ov.style.display='flex'; } else { ov.classList.remove('show'); setTimeout(()=>ov.style.display='none',220); }
+}
+
+/* ---------- AUTH UI wiring ---------- */
+$('toggleSignupBtn').addEventListener('click', ()=>{
+  $('authPrimaryBtn').innerText='Create account';
+  $('authPrimaryBtn').onclick = signUp;
+  $('authSecondaryBtn').innerText='Sign in';
+  $('authSecondaryBtn').onclick = signIn;
+  $('authMsg').innerText = 'Enter details and press Create account';
+});
+$('authPrimaryBtn').addEventListener('click', signIn);
+$('authSecondaryBtn').addEventListener('click', signUp);
+$('anonDemo').addEventListener('click', signInAnonymously);
+
+/* ---------- AUTH FUNCTIONS ---------- */
+async function signIn(){
+  const email = $('authEmail').value.trim();
+  const pass = $('authPass').value;
+  if(!email || !pass){ $('authMsg').innerText = 'Enter email and password'; return; }
+  try{ await auth.signInWithEmailAndPassword(email, pass); $('authMsg').innerText=''; } catch(e){ $('authMsg').innerText = e.message; console.error(e); }
+}
+async function signUp(){
+  const email = $('authEmail').value.trim();
+  const pass = $('authPass').value;
+  if(!email || !pass){ $('authMsg').innerText = 'Enter email and password'; return; }
+  try{ await auth.createUserWithEmailAndPassword(email, pass); $('authMsg').innerText='Account created — signed in'; } catch(e){ $('authMsg').innerText = e.message; console.error(e); }
+}
+async function signInAnonymously(){ try{ await auth.signInAnonymously(); } catch(e){ console.error(e); alert('Demo sign-in failed: '+e.message); } }
+async function signOut(){ try{ await auth.signOut(); } catch(e){ console.error(e); } }
+
+/* ---------- AUTH STATE ---------- */
+let currentUser = null;
+let productsUnsub, salesUnsub, settingsUnsub;
+auth.onAuthStateChanged(user=>{
+  currentUser = user;
+  $('todayDate').innerText = new Date().toLocaleDateString();
+  if(user){
+    $('userEmail').innerText = user.isAnonymous ? 'Demo user' : (user.email || '—');
+    showAuthOverlay(false);
+    $('loading') && $('loading').style.display='none';
+    $('appRoot').style.opacity = 1;
+    startUserListeners(user.uid);
+  } else {
+    $('userEmail').innerText = '—';
+    showAuthOverlay(true);
+    $('loading') && $('loading').style.display='block';
+    stopUserListeners();
+  }
+});
+
+/* ---------- FIRESTORE listeners + seed ---------- */
+function startUserListeners(uid){
+  const pCol = db.collection('users').doc(uid).collection('products');
+  productsUnsub = pCol.onSnapshot(snap=>{
+    const arr=[]; snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
+    window._products = arr; renderProductsSelect(); renderInventory(); renderDashboard();
+  }, e=>console.error(e));
+
+  const sCol = db.collection('users').doc(uid).collection('sales').orderBy('time','desc');
+  salesUnsub = sCol.onSnapshot(snap=>{
+    const arr=[]; snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
+    window._sales = arr; renderRecent(); renderDashboard(); renderReportSummary();
+  }, e=>console.error(e));
+
+  const settingsDoc = db.collection('users').doc(uid).collection('meta').doc('settings');
+  settingsUnsub = settingsDoc.onSnapshot(doc=>{
+    const s = doc.exists ? doc.data() : { bizName:'BizzBooks Duka', mpesa:'' };
+    window._settings = s;
+    $('bizNameTitle').innerText = s.bizName || '—';
+    $('bizName').value = s.bizName || '';
+    $('mpesaNo').value = s.mpesa || '';
+  }, e=>console.error(e));
+
+  // seed sample if empty
+  pCol.limit(1).get().then(q=>{
+    if(q.empty){
+      const seed = [
+        { name:'Unga (2kg)', qty:30, buy:120, sell:150 },
+        { name:'Sugar (1kg)', qty:20, buy:100, sell:130 },
+        { name:'Blue Band (250g)', qty:10, buy:80, sell:100 }
+      ];
+      seed.forEach(it=>pCol.add(it).catch(e=>console.warn('seed failed',e)));
+    }
+  }).catch(e=>console.warn('seed check',e));
+}
+function stopUserListeners(){
+  productsUnsub && productsUnsub(); salesUnsub && salesUnsub(); settingsUnsub && settingsUnsub();
+  window._products=[]; window._sales=[]; window._settings={};
+}
+
+/* ---------- RENDER / UI ---------- */
+function renderProductsSelect(){
+  const sel = $('saleProduct'); if(!sel) return; sel.innerHTML='';
+  (window._products||[]).forEach(p=>{
+    const o = document.createElement('option'); o.value=p.id; o.innerText = `${p.name} — ${p.qty} left (Ksh ${p.sell||'-'})`; sel.appendChild(o);
+  });
+}
+function renderDashboard(){
+  const sales = window._sales || [];
+  const today = new Date().toDateString();
+  const todaySales = sales.filter(s=> new Date(s.time).toDateString() === today);
+  const total = todaySales.reduce((a,b)=>a+(b.total||0),0);
+  $('totalSales').innerText = formatKES(total);
+  const freq={}; todaySales.forEach(s=>freq[s.productName]=(freq[s.productName]||0)+s.qty);
+  $('topItem').innerText = Object.keys(freq).sort((a,b)=>freq[b]-freq[a])[0] || '—';
+  const low = (window._products||[]).filter(p=>p.qty<=5);
+  $('lowStockList').innerText = low.length ? low.map(p=> `${p.name} (${p.qty})`).join(', ') : 'All good';
+}
+function renderRecent(){
+  const list = $('recentList'); list.innerHTML='';
+  const sales = (window._sales||[]).slice(0,8);
+  if(!sales.length){ list.innerHTML = '<div class="small-muted">No sales yet</div>'; return; }
+  sales.forEach(s=>{
+    const d = new Date(s.time);
+    const el = document.createElement('div'); el.className='list-item';
+    el.innerHTML = `<div><strong>${s.productName}</strong><div class="small-muted">${s.qty} × KES ${s.unitPrice}</div></div>
+                    <div style="text-align:right"><div style="font-weight:800">KES ${s.total}</div><div class="small-muted">${d.toLocaleString()}</div></div>`;
+    list.appendChild(el);
+  });
+}
+function renderInventory(){
+  const list = $('inventoryList'); list.innerHTML='';
+  const prods = window._products || [];
+  if(!prods.length){ list.innerHTML = '<div class="small-muted">No products</div>'; return; }
+  prods.forEach(p=>{
+    const el = document.createElement('div'); el.className='list-item';
+    el.innerHTML = `<div><strong>${p.name}</strong><div class="small-muted">Qty: ${p.qty} — Buy: ${p.buy||'-'} — Sell: ${p.sell||'-'}</div></div>
+      <div><button class="btn ghost" onclick="quickSell('${p.id}')">Sell</button></div>`;
+    list.appendChild(el);
+  });
+}
+
+/* ---------- NAVIGATE ---------- */
+function navigate(screen){
+  const screens = ['dashboard','add-sale','add-stock','inventory','reports','settings'];
+  screens.forEach(s=>{
+    const el = $('screen-'+s);
+    if(el){ el.style.display = (s===screen?'block':'none'); if(s===screen){ el.style.opacity=1; el.style.transform='translateY(0)'; } else { el.style.opacity=0; el.style.transform='translateY(8px)'; } }
+  });
+  const titleMap = {
+    dashboard:['Dashboard','Quick view of your sales & stock'],
+    'add-sale':['Add Sale','Record a sale quickly'],
+    'add-stock':['Add Stock','Add or restock products'],
+    'inventory':['Inventory','All your products'],
+    'reports':['Reports','Export and share summaries'],
+    'settings':['Settings','Business information']
+  };
+  const t = titleMap[screen] || titleMap.dashboard;
+  $('panelTitle').innerText = t[0]; $('panelSubtitle').innerText = t[1];
+  // update active nav
+  navButtons.forEach(b=>b.classList.toggle('active', b.dataset.screen===screen));
+}
+
+/* ---------- ACTIONS: Save stock / sale ---------- */
+async function saveStock(){
+  const name = $('stockName').value.trim();
+  const qty = parseInt($('stockQty').value) || 0;
+  const buy = parseFloat($('buyPrice').value) || 0;
+  const sell = parseFloat($('sellPrice').value) || 0;
+  if(!name || qty<=0){ toast('Enter product name and quantity'); return; }
+  const uid = currentUser.uid;
+  const pCol = db.collection('users').doc(uid).collection('products');
+  try{
+    const q = await pCol.where('name','==',name).limit(1).get();
+    if(!q.empty){ const doc = q.docs[0]; await doc.ref.update({ qty: firebase.firestore.FieldValue.increment(qty), buy: buy || doc.data().buy, sell: sell || doc.data().sell }); }
+    else { await pCol.add({ name, qty, buy, sell }); }
+    $('stockName').value=''; $('stockQty').value=10; $('buyPrice').value=''; $('sellPrice').value='';
+    toast('Stock saved'); navigate('inventory');
+  }catch(e){ console.error(e); toast('Failed to save stock'); }
+}
+
+async function saveSale(){
+  const pid = $('saleProduct').value;
+  const qty = parseInt($('saleQty').value) || 0;
+  const payment = $('salePayment').value;
+  const customer = $('saleCustomer').value.trim();
+  if(!pid || qty<=0){ toast('Select product and quantity'); return; }
+  const uid = currentUser.uid;
+  const pDocRef = db.collection('users').doc(uid).collection('products').doc(pid);
+  try{
+    const pSnap = await pDocRef.get();
+    if(!pSnap.exists){ toast('Product not found'); return; }
+    const p = pSnap.data();
+    if(p.qty < qty){ if(!confirm('Insufficient stock. Proceed?')) return; }
+    await pDocRef.update({ qty: firebase.firestore.FieldValue.increment(-qty) });
+    const unit = p.sell || 0; const total = unit * qty;
+    await db.collection('users').doc(uid).collection('sales').add({ productId: pid, productName: p.name, qty, unitPrice: unit, total, payment, customer, time: new Date().toISOString() });
+    $('saleCustomer').value=''; $('saleQty').value=1; toast('Sale recorded'); navigate('dashboard');
+  }catch(e){ console.error(e); toast('Failed to record sale'); }
+}
+
+/* ---------- Reports / Export ---------- */
+function generateReport(period='today'){
+  const sales = window._sales || [];
+  const now = new Date();
+  let filtered = sales;
+  if(period==='today') filtered = sales.filter(s=> new Date(s.time).toDateString() === now.toDateString());
+  else if(period==='week'){ const start=new Date(); start.setDate(now.getDate()-7); filtered = sales.filter(s=> new Date(s.time) >= start); }
+  const total = filtered.reduce((a,b)=>a+(b.total||0),0);
+  const items = {}; filtered.forEach(s=> items[s.productName] = (items[s.productName]||0)+s.qty);
+  return { period, total, count: filtered.length, items, rows: filtered };
+}
+function renderReportSummary(){
+  const el = $('reportSummary'); if(!el) return;
+  const period = $('reportPeriod') ? $('reportPeriod').value : 'today';
+  const data = generateReport(period);
+  el.innerHTML = `<div class="small-muted">Period: ${data.period}</div>
+    <div style="font-weight:800; margin-top:6px">${formatKES(data.total)} — ${data.count} sales</div>
+    <div class="small-muted" style="margin-top:6px">Top: ${Object.keys(data.items).slice(0,3).join(', ') || '-'}</div>`;
+}
+function generateExport(type='csv'){
+  const period = $('reportPeriod').value || 'today';
+  const data = generateReport(period);
+  if(type==='json'){ const blob = new Blob([JSON.stringify(data.rows,null,2)],{type:'application/json'}); triggerDownload(blob, `bizzbooks_${period}.json`); }
+  else {
+    const rows = data.rows;
+    if(rows.length===0){ toast('No data to export'); return; }
+    const headers=['time','productName','qty','unitPrice','total','payment','customer'];
+    const csv = [headers.join(',')].concat(rows.map(r=> headers.map(h=> JSON.stringify(r[h]||'')).join(','))).join('\n');
+    triggerDownload(new Blob([csv],{type:'text/csv'}), `bizzbooks_${period}.csv`);
+  }
+}
+function triggerDownload(blob, filename){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },800); }
+function shareSummary(){ const data = generateReport($('reportPeriod').value||'today'); const text = `BizzBooks ${data.period} summary:\nTotal ${data.total}\nSales: ${data.count}\nTop: ${Object.keys(data.items).slice(0,5).map(k=>`${k}(${data.items[k]})`).join(', ')}`; navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text).then(()=>toast('Summary copied')) : alert(text); }
+
+/* ---------- Settings ---------- */
+async function saveSettings(){
+  const uid = currentUser.uid;
+  const s = { bizName: $('bizName').value || 'BizzBooks Duka', mpesa: $('mpesaNo').value || '' };
+  try{ await db.collection('users').doc(uid).collection('meta').doc('settings').set(s); toast('Settings saved'); } catch(e){ console.error(e); toast('Failed to save settings'); }
+}
+
+/* ---------- Quick helpers ---------- */
+function quickSell(id){ navigate('add-sale'); setTimeout(()=>{ $('saleProduct').value=id; $('saleQty').value=1; },220); }
+
+/* ---------- Init ---------- */
+function init(){
+  // hide all screens except dashboard initially
+  navigate('dashboard');
+  // wire report period change
+  $('reportPeriod') && $('reportPeriod').addEventListener('change', renderReportSummary);
+  // show overlay initially if not logged in
+  showAuthOverlay(true);
+}
+init();
+</script>
+
+<!-- small animations -->
+<style>
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+</style>
+</body>
+</html>
